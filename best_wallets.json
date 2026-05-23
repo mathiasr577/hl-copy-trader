@@ -1,0 +1,163 @@
+[
+  {
+    "address": "0xf517639a8872e756ac98d3c65507d2ebc25cc032",
+    "account_value": 800038.445894,
+    "active_positions": 9,
+    "win_rate": 100.0,
+    "total_trades": 1134
+  },
+  {
+    "address": "0x7c930969fcf3e5a5c78bcf2e1cefda3f53e3c8fd",
+    "account_value": 2495439.235465,
+    "active_positions": 101,
+    "win_rate": 100.0,
+    "total_trades": 1903
+  },
+  {
+    "address": "0xd4c1f7e8d876c4749228d515473d36f919583d1d",
+    "account_value": 2694335.126809,
+    "active_positions": 17,
+    "win_rate": 100.0,
+    "total_trades": 634
+  },
+  {
+    "address": "0x17c3c8fdbcb7d1b240ce08965e09b1fc91cba868",
+    "account_value": 9253091.968503,
+    "active_positions": 19,
+    "win_rate": 100.0,
+    "total_trades": 185
+  },
+  {
+    "address": "0x86523927bffeafe2e532f0218feb1f3c29f6120d",
+    "account_value": 7772892.624476,
+    "active_positions": 1,
+    "win_rate": 100.0,
+    "total_trades": 591
+  },
+  {
+    "address": "0x6f97d329b072e0f7b74575565d806a4351b8f824",
+    "account_value": 924624.319207,
+    "active_positions": 2,
+    "win_rate": 100.0,
+    "total_trades": 540
+  },
+  {
+    "address": "0x31dea2516beee92135b96f464eeec3cf292a13f2",
+    "account_value": 13783675.123937,
+    "active_positions": 6,
+    "win_rate": 98.61,
+    "total_trades": 1006
+  },
+  {
+    "address": "0xf58b673c1633ccef0ac58263cdc95ed80f817fc7",
+    "account_value": 515592.954686,
+    "active_positions": 1,
+    "win_rate": 97.66,
+    "total_trades": 981
+  },
+  {
+    "address": "0xf02d16a272a842f8bac1d9a9e773aba1933454c6",
+    "account_value": 1307727.005086,
+    "active_positions": 1,
+    "win_rate": 97.21,
+    "total_trades": 823
+  },
+  {
+    "address": "0xae7a0f9f663bb54bfe95378c7e3de7dd6e28d6bc",
+    "account_value": 1193781.351741,
+    "active_positions": 19,
+    "win_rate": 96.74,
+    "total_trades": 827
+  },
+  {
+    "address": "0x2d66f73159eaa54cc7fddaea2ba8cf91f9f14cd6",
+    "account_value": 882284.321354,
+    "active_positions": 4,
+    "win_rate": 82.44,
+    "total_trades": 985
+  },
+  {
+    "address": "0x7fdafde5cfb5465924316eced2d3715494c517d1",
+    "account_value": 24483096.395628,
+    "active_positions": 28,
+    "win_rate": 81.19,
+    "total_trades": 1244
+  },
+  {
+    "address": "0xf28e1b06e00e8774c612e31ab3ac35d5a720085f",
+    "account_value": 11963751.589977,
+    "active_positions": 65,
+    "win_rate": 81.15,
+    "total_trades": 1061
+  },
+  {
+    "address": "0x023a3d058020fb76cca98f01b3c48c8938a22355",
+    "account_value": 11338335.435921,
+    "active_positions": 76,
+    "win_rate": 76.45,
+    "total_trades": 1206
+  },
+  {
+    "address": "0xfc667adba8d4837586078f4fdcdc29804337ca06",
+    "account_value": 20806587.065184,
+    "active_positions": 6,
+    "win_rate": 72.03,
+    "total_trades": 143
+  },
+  {
+    "address": "0x856c35038594767646266bc7fd68dc26480e910d",
+    "account_value": 21580463.315412,
+    "active_positions": 30,
+    "win_rate": 70.3,
+    "total_trades": 1276
+  },
+  {
+    "address": "0xeadc152ac1014ace57c6b353f89adf5faffe9d55",
+    "account_value": 18490645.454296,
+    "active_positions": 39,
+    "win_rate": 70.19,
+    "total_trades": 1164
+  },
+  {
+    "address": "0xd47587702a91731dc1089b5db0932cf820151a91",
+    "account_value": 9469459.298124,
+    "active_positions": 14,
+    "win_rate": 67.51,
+    "total_trades": 914
+  },
+  {
+    "address": "0x3bcae23e8c380dab4732e9a159c0456f12d866f3",
+    "account_value": 616292.037508,
+    "active_positions": 4,
+    "win_rate": 66.05,
+    "total_trades": 1140
+  },
+  {
+    "address": "0xecb63caa47c7c4e77f60f1ce858cf28dc2b82b00",
+    "account_value": 25227823.738533,
+    "active_positions": 87,
+    "win_rate": 62.02,
+    "total_trades": 1140
+  },
+  {
+    "address": "0x9e8b1e51c642f4c8b87c6ba11c53d516a218afc4",
+    "account_value": 1798750.49544,
+    "active_positions": 1,
+    "win_rate": 61.11,
+    "total_trades": 180
+  },
+  {
+    "address": "0xf5d81a135f756ca16544e53c20fc20643ec3ad53",
+    "account_value": 863689.468294,
+    "active_positions": 22,
+    "win_rate": 60.52,
+    "total_trades": 960
+  },
+  {
+    "address": "0xa6ee1ed1ae80b8352603654b39f5e7b9bedd5078",
+    "account_value": 1215242.644283,
+    "active_positions": 2,
+    "win_rate": 60.37,
+    "total_trades": 429
+  }
+]

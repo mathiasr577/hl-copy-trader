@@ -44,7 +44,6 @@ def get_wallet_stats(address):
                     "pnl": unrealized_pnl,
                     "side": "LONG" if size > 0 else "SHORT"
                 })
-        # Solo guardar en cache, NO copiar automaticamente al agregar wallet
         wallet_positions[address] = open_positions
         return {
             "address": address,
@@ -77,7 +76,17 @@ def get_wallet_performance(address):
 def load_wallets():
     try:
         with open("wallets.json", "r") as f:
-            return json.load(f)
+            wallets = json.load(f)
+            if wallets:
+                return wallets
+    except:
+        pass
+    try:
+        default = os.getenv("DEFAULT_WALLETS", "[]")
+        wallets = json.loads(default)
+        if wallets:
+            save_wallets(wallets)
+        return wallets
     except:
         return []
 
@@ -175,7 +184,6 @@ def on_ws_message(ws, message):
             return
         w = wallet_map[user]
         real_address = w["address"]
-
         asset_positions = msg_data.get("clearinghouseState", {}).get("assetPositions", [])
         new_positions = []
         for p in asset_positions:
@@ -189,19 +197,13 @@ def on_ws_message(ws, message):
                     "pnl": float(pos.get("unrealizedPnl", 0)),
                     "side": "LONG" if size > 0 else "SHORT"
                 })
-
         old_positions = wallet_positions.get(real_address, None)
-
-        # Primera vez que vemos esta wallet — solo guardar como referencia, NO copiar
         if old_positions is None:
             wallet_positions[real_address] = new_positions
-            print(f"[WS] Referencia inicial cargada para {w['label']} — {len(new_positions)} posiciones existentes")
+            print(f"[WS] Referencia inicial: {w['label']} — {len(new_positions)} posiciones existentes")
             return
-
         old_assets = {p["asset"]: p for p in old_positions}
         new_assets = {p["asset"]: p for p in new_positions}
-
-        # Detectar posiciones NUEVAS — copiar
         for asset, pos in new_assets.items():
             if asset not in old_assets:
                 print(f"[WS] 🆕 Nueva posición en {w['label']}: {pos['side']} {asset}")
@@ -209,16 +211,12 @@ def on_ws_message(ws, message):
                 if perf.get("win_rate", 0) >= 60:
                     open_paper_position(asset, pos["side"], pos["entry_price"], real_address, w.get("label", ""))
                 else:
-                    print(f"[WS] ⚠️ Win rate bajo ({perf.get('win_rate')}%) — no copiando {asset}")
-
-        # Detectar posiciones CERRADAS — cerrar en paper trading
+                    print(f"[WS] ⚠️ Win rate bajo — no copiando {asset}")
         for asset in old_assets:
             if asset not in new_assets:
                 print(f"[WS] 🔴 Cerrada en {w['label']}: {asset}")
                 close_paper_position(asset, real_address)
-
         wallet_positions[real_address] = new_positions
-
     except Exception as e:
         print(f"[WS] Error: {e}")
 
