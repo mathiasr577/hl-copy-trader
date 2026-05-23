@@ -1,0 +1,4 @@
+venv/
+paper_state.json
+__pycache__/
+.env
