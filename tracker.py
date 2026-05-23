@@ -74,21 +74,26 @@ def get_wallet_performance(address):
         return {"win_rate": 0, "total_trades": 0, "error": str(e)}
 
 def load_wallets():
+    HARDCODED_WALLETS = [
+        {"address": "0x082e843a431aef031264dc232693dd710aedca88", "label": "Whale #9 - 176% ROI"},
+        {"address": "0x7fdafde5cfb5465924316eced2d3715494c517d1", "label": "BobbyBigSize 83%"},
+        {"address": "0x31dea2516beee92135b96f464eeec3cf292a13f2", "label": "Top 98% - $13M"},
+        {"address": "0xae7a0f9f663bb54bfe95378c7e3de7dd6e28d6bc", "label": "Top 96% - $1.2M"},
+        {"address": "0x2d66f73159eaa54cc7fddaea2ba8cf91f9f14cd6", "label": "Top 82% - $882K"},
+        {"address": "0x856c35038594767646266bc7fd68dc26480e910d", "label": "Top 70% - $21M"},
+        {"address": "0xeadc152ac1014ace57c6b353f89adf5faffe9d55", "label": "Top 70% - $18M"},
+        {"address": "0xd47587702a91731dc1089b5db0932cf820151a91", "label": "Top 67% - $9.4M"}
+    ]
     try:
         with open("wallets.json", "r") as f:
-            wallets = json.load(f)
-            if wallets:
-                return wallets
+            extra = json.load(f)
+            existing = {w["address"] for w in HARDCODED_WALLETS}
+            for w in extra:
+                if w["address"] not in existing:
+                    HARDCODED_WALLETS.append(w)
     except:
         pass
-    try:
-        default = os.getenv("DEFAULT_WALLETS", "[]")
-        wallets = json.loads(default)
-        if wallets:
-            save_wallets(wallets)
-        return wallets
-    except:
-        return []
+    return HARDCODED_WALLETS
 
 def save_wallets(wallets):
     with open("wallets.json", "w") as f:
