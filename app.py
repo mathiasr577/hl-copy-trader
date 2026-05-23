@@ -70,7 +70,6 @@ def add_wallet():
             return jsonify({"error": "Wallet ya existe"}), 400
     wallets.append({"address": address, "label": label})
     save_wallets(wallets)
-    # Suscribir nueva wallet al WebSocket
     from tracker import ws_app
     if ws_app:
         import json as _json
@@ -87,4 +86,5 @@ def remove_wallet(address):
 
 if __name__ == "__main__":
     init_websocket()
-    app.run(debug=False, port=5001)
+    port = int(os.environ.get("PORT", 5001))
+    app.run(debug=False, host="0.0.0.0", port=port)
