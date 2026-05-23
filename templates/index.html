@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HL Copy Trader</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0d1117; color: #e6edf3; font-family: -apple-system, sans-serif; }
+        .header { background: #161b22; padding: 20px 40px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; color: #58a6ff; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; background: #1f6feb33; color: #58a6ff; border: 1px solid #1f6feb; }
+        .container { padding: 30px 40px; }
+        .section-title { font-size: 16px; font-weight: 700; color: #e6edf3; margin-bottom: 16px; }
+
+        /* PAPER TRADING PANEL */
+        .paper-panel { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 24px; margin-bottom: 30px; }
+        .paper-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .paper-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+        .stat-box { background: #0d1117; border-radius: 8px; padding: 16px; text-align: center; }
+        .stat-box .value { font-size: 24px; font-weight: 700; }
+        .stat-box .label { font-size: 12px; color: #8b949e; margin-top: 4px; }
+        .green { color: #3fb950; }
+        .red { color: #f85149; }
+        .yellow { color: #d29922; }
+        .blue { color: #58a6ff; }
+
+        /* POSICIONES ABIERTAS */
+        .positions-table { width: 100%; border-collapse: collapse; }
+        .positions-table th { text-align: left; padding: 10px 12px; font-size: 12px; color: #8b949e; border-bottom: 1px solid #30363d; }
+        .positions-table td { padding: 12px; font-size: 14px; border-bottom: 1px solid #21262d; }
+        .side-badge { padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .long { background: #1a4731; color: #3fb950; }
+        .short { background: #3d1a1a; color: #f85149; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .btn-danger { background: #da3633; color: white; }
+        .btn-danger:hover { background: #f85149; }
+        .btn-reset { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+        .btn-reset:hover { color: #e6edf3; }
+
+        /* HISTORIAL */
+        .history-item { background: #0d1117; border-radius: 6px; padding: 12px 16px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .history-asset { font-weight: 600; }
+        .history-meta { font-size: 12px; color: #8b949e; margin-top: 2px; }
+
+        /* WALLETS */
+        .add-wallet { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; margin-bottom: 20px; display: flex; gap: 10px; }
+        .add-wallet input { flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 10px 14px; color: #e6edf3; font-size: 14px; }
+        .add-wallet input:focus { outline: none; border-color: #58a6ff; }
+        .btn-primary { background: #238636; color: white; }
+        .btn-primary:hover { background: #2ea043; }
+        .wallets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+        .wallet-card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; }
+        .wallet-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+        .wallet-label { font-size: 15px; font-weight: 600; }
+        .wallet-address { font-size: 11px; color: #8b949e; margin-top: 2px; }
+        .wallet-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+        .wstat { background: #0d1117; border-radius: 6px; padding: 8px; text-align: center; }
+        .wstat .v { font-size: 18px; font-weight: 700; }
+        .wstat .l { font-size: 11px; color: #8b949e; margin-top: 2px; }
+        .pos-item { background: #0d1117; border-radius: 6px; padding: 10px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .no-data { color: #8b949e; font-size: 13px; text-align: center; padding: 12px; }
+        .empty-state { text-align: center; padding: 40px; color: #8b949e; }
+        .divider { border: none; border-top: 1px solid #30363d; margin: 24px 0; }
+        .live-dot { width: 8px; height: 8px; background: #3fb950; border-radius: 50%; display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔷 HL Copy Trader</h1>
+        <span class="badge"><span class="live-dot"></span>Paper Trading — Mainnet Data</span>
+    </div>
+
+    <div class="container">
+
+        <!-- PAPER TRADING PANEL -->
+        <div class="paper-panel">
+            <div class="paper-header">
+                <div class="section-title">💰 Paper Trading</div>
+                <button class="btn btn-reset" onclick="resetPaper()">↺ Reset a $1,000</button>
+            </div>
+
+            <div class="paper-stats">
+                <div class="stat-box">
+                    <div class="value blue" id="balance">$1,000.00</div>
+                    <div class="label">Balance disponible</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="total-value">$1,000.00</div>
+                    <div class="label">Valor total</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="total-pnl">$0.00</div>
+                    <div class="label">PNL total</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="total-pnl-pct">0.00%</div>
+                    <div class="label">Retorno</div>
+                </div>
+            </div>
+
+            <!-- POSICIONES ABIERTAS -->
+            <div class="section-title" style="font-size:14px; margin-bottom:12px;">📊 Posiciones abiertas</div>
+            <div id="open-positions">
+                <div class="no-data">Sin posiciones abiertas</div>
+            </div>
+
+            <hr class="divider">
+
+            <!-- HISTORIAL -->
+            <div class="section-title" style="font-size:14px; margin-bottom:12px;">📋 Historial cerrado</div>
+            <div id="history-list">
+                <div class="no-data">Sin trades cerrados aún</div>
+            </div>
+        </div>
+
+        <!-- WALLETS -->
+        <div class="section-title">🔍 Wallets trackeadas</div>
+        <div class="add-wallet">
+            <input type="text" id="wallet-address" placeholder="Wallet address de Hyperliquid..." />
+            <input type="text" id="wallet-label" placeholder="Nombre (ej: Whale #1)" style="max-width:200px"/>
+            <button class="btn btn-primary" onclick="addWallet()">+ Agregar</button>
+        </div>
+        <div id="wallets-container">
+            <div class="no-data">Cargando wallets...</div>
+        </div>
+    </div>
+
+    <script>
+        async function loadPaper() {
+            const res = await fetch("/api/paper");
+            const state = await res.json();
+
+            const balance = state.balance || 0;
+            const initial = state.initial_balance || 1000;
+            const positions = state.positions || [];
+            const history = state.history || [];
+
+            let unrealizedTotal = 0;
+            positions.forEach(p => { unrealizedTotal += (p.unrealized_pnl || 0); });
+
+            const totalValue = balance + positions.reduce((s, p) => s + p.invested + (p.unrealized_pnl || 0), 0);
+            const totalPnl = totalValue - initial;
+            const totalPct = ((totalPnl / initial) * 100).toFixed(2);
+
+            document.getElementById("balance").textContent = "$" + balance.toFixed(2);
+            document.getElementById("total-value").textContent = "$" + totalValue.toFixed(2);
+
+            const pnlEl = document.getElementById("total-pnl");
+            pnlEl.textContent = (totalPnl >= 0 ? "+" : "") + "$" + totalPnl.toFixed(2);
+            pnlEl.className = "value " + (totalPnl >= 0 ? "green" : "red");
+
+            const pctEl = document.getElementById("total-pnl-pct");
+            pctEl.textContent = (totalPnl >= 0 ? "+" : "") + totalPct + "%";
+            pctEl.className = "value " + (totalPnl >= 0 ? "green" : "red");
+
+            // Posiciones abiertas
+            const posEl = document.getElementById("open-positions");
+            if (positions.length === 0) {
+                posEl.innerHTML = '<div class="no-data">Sin posiciones abiertas — se copiarán automáticamente cuando la wallet abra un trade</div>';
+            } else {
+                posEl.innerHTML = `
+                    <table class="positions-table">
+                        <thead>
+                            <tr>
+                                <th>Asset</th>
+                                <th>Lado</th>
+                                <th>Invertido</th>
+                                <th>Entrada</th>
+                                <th>Precio actual</th>
+                                <th>PNL</th>
+                                <th>%</th>
+                                <th>Copiado de</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${positions.map(p => {
+                                const pnl = p.unrealized_pnl || 0;
+                                const pct = p.pnl_pct || 0;
+                                return `
+                                <tr>
+                                    <td><strong>${p.asset}</strong></td>
+                                    <td><span class="side-badge ${p.side === 'LONG' ? 'long' : 'short'}">${p.side}</span></td>
+                                    <td>$${p.invested.toFixed(2)}</td>
+                                    <td>$${p.entry_price.toFixed(4)}</td>
+                                    <td>$${(p.current_price || 0).toFixed(4)}</td>
+                                    <td class="${pnl >= 0 ? 'green' : 'red'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</td>
+                                    <td class="${pct >= 0 ? 'green' : 'red'}">${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%</td>
+                                    <td style="font-size:11px;color:#8b949e">${p.wallet_label}</td>
+                                    <td><button class="btn btn-danger" onclick="closePosition('${p.asset}')" style="padding:4px 10px;font-size:11px">Cerrar</button></td>
+                                </tr>`;
+                            }).join("")}
+                        </tbody>
+                    </table>`;
+            }
+
+            // Historial
+            const histEl = document.getElementById("history-list");
+            if (history.length === 0) {
+                histEl.innerHTML = '<div class="no-data">Sin trades cerrados aún</div>';
+            } else {
+                histEl.innerHTML = [...history].reverse().map(h => {
+                    const pnl = h.final_pnl || 0;
+                    return `
+                    <div class="history-item">
+                        <div>
+                            <div class="history-asset">${h.asset} <span class="side-badge ${h.side === 'LONG' ? 'long' : 'short'}" style="font-size:10px">${h.side}</span></div>
+                            <div class="history-meta">Abierto: ${h.opened_at} → Cerrado: ${h.closed_at}</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div class="${pnl >= 0 ? 'green' : 'red'}" style="font-weight:700">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</div>
+                            <div style="font-size:11px;color:#8b949e">Invertido: $${h.invested.toFixed(2)}</div>
+                        </div>
+                    </div>`;
+                }).join("");
+            }
+        }
+
+        async function loadWallets() {
+            const res = await fetch("/api/wallets");
+            const wallets = await res.json();
+            const container = document.getElementById("wallets-container");
+            if (wallets.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>Agrega una wallet del leaderboard para empezar</p></div>';
+                return;
+            }
+            container.innerHTML = `<div class="wallets-grid">${wallets.map(w => walletCard(w)).join("")}</div>`;
+        }
+
+        function walletCard(w) {
+            const wr = w.win_rate || 0;
+            const wrColor = wr >= 70 ? "green" : wr >= 50 ? "yellow" : "red";
+            const positions = w.open_positions || [];
+            return `
+                <div class="wallet-card">
+                    <div class="wallet-header">
+                        <div>
+                            <div class="wallet-label">${w.label || "Sin nombre"}</div>
+                            <div class="wallet-address">${w.address}</div>
+                        </div>
+                        <button class="btn btn-danger" onclick="removeWallet('${w.address}')" style="padding:5px 10px;font-size:11px">✕</button>
+                    </div>
+                    <div class="wallet-stats">
+                        <div class="wstat"><div class="v ${wrColor}">${wr}%</div><div class="l">Win Rate</div></div>
+                        <div class="wstat"><div class="v">${w.total_trades || 0}</div><div class="l">Trades</div></div>
+                        <div class="wstat"><div class="v">${positions.length}</div><div class="l">Posiciones</div></div>
+                    </div>
+                    ${positions.length === 0
+                        ? '<div class="no-data">Sin posiciones abiertas</div>'
+                        : positions.map(p => `
+                            <div class="pos-item">
+                                <strong>${p.asset}</strong>
+                                <div style="display:flex;gap:8px;align-items:center">
+                                    <span class="${p.pnl >= 0 ? 'green' : 'red'}">$${p.pnl.toFixed(2)}</span>
+                                    <span class="side-badge ${p.side === 'LONG' ? 'long' : 'short'}">${p.side}</span>
+                                </div>
+                            </div>`).join("")
+                    }
+                </div>`;
+        }
+
+        async function addWallet() {
+            const address = document.getElementById("wallet-address").value.trim();
+            const label = document.getElementById("wallet-label").value.trim();
+            if (!address) return alert("Ingresa una dirección");
+            await fetch("/api/add_wallet", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({address, label})
+            });
+            document.getElementById("wallet-address").value = "";
+            document.getElementById("wallet-label").value = "";
+            loadWallets();
+            loadPaper();
+        }
+
+        async function removeWallet(address) {
+            await fetch(`/api/remove_wallet/${address}`, {method: "DELETE"});
+            loadWallets();
+        }
+
+        async function closePosition(asset) {
+            await fetch("/api/paper/close", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({asset})
+            });
+            loadPaper();
+        }
+
+        async function resetPaper() {
+            if (!confirm("¿Resetear el paper trading a $1,000?")) return;
+            await fetch("/api/paper/reset", {method: "POST"});
+            loadPaper();
+        }
+
+        // Cargar todo
+        loadPaper();
+        loadWallets();
+
+        // Actualizar cada 15 segundos
+        setInterval(() => { loadPaper(); loadWallets(); }, 15000);
+    </script>
+</body>
+</html>

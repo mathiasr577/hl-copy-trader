@@ -1,0 +1,20 @@
+{
+  "balance": 950.0,
+  "initial_balance": 1000.0,
+  "positions": [
+    {
+      "asset": "HYPE",
+      "side": "LONG",
+      "entry_price": 57.2385,
+      "size": 0.8735379159132401,
+      "invested": 50.0,
+      "opened_at": "2026-05-23 13:47:26",
+      "copied_from": "0x082e843a...edca88",
+      "wallet_label": "\"Whale #9 - 176% ROI\"",
+      "current_price": 57.4935,
+      "unrealized_pnl": 0.22,
+      "pnl_pct": 0.45
+    }
+  ],
+  "history": []
+}
