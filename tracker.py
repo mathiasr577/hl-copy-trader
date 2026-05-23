@@ -44,6 +44,7 @@ def get_wallet_stats(address):
                     "pnl": unrealized_pnl,
                     "side": "LONG" if size > 0 else "SHORT"
                 })
+        # Solo guardar en cache, NO copiar automaticamente al agregar wallet
         wallet_positions[address] = open_positions
         return {
             "address": address,
@@ -100,32 +101,65 @@ def save_paper_state(state):
     with open("paper_state.json", "w") as f:
         json.dump(state, f, indent=2)
 
-def process_new_position(asset, side, entry_price, wallet_address, wallet_label):
+def open_paper_position(asset, side, entry_price, wallet_address, wallet_label):
     state = load_paper_state()
     current_assets = {p["asset"] for p in state["positions"]}
     if asset in current_assets:
         return
-    positions_from_wallet = [p for p in state["positions"] if p.get("copied_from", "").startswith(wallet_address[:10])]
+    positions_from_wallet = [p for p in state["positions"] if p.get("wallet_address") == wallet_address]
     if len(positions_from_wallet) >= 5:
         return
     invest = state["balance"] * 0.05
     if invest < 1:
+        print(f"[PAPER] Balance insuficiente para copiar {asset}")
         return
     price = entry_price if entry_price > 0 else get_current_price(asset)
+    if price == 0:
+        return
     new_position = {
         "asset": asset,
         "side": side,
         "entry_price": price,
-        "size": invest / price if price > 0 else 0,
+        "size": invest / price,
         "invested": invest,
         "opened_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "copied_from": wallet_address[:10] + "..." + wallet_address[-6:],
+        "wallet_address": wallet_address,
         "wallet_label": wallet_label
     }
     state["balance"] -= invest
     state["positions"].append(new_position)
     save_paper_state(state)
-    print(f"[PAPER] Nueva posición copiada: {side} {asset} @ ${price} — Invertido: ${invest:.2f}")
+    print(f"[PAPER] ✅ Abierto: {side} {asset} @ ${price:.4f} — Invertido: ${invest:.2f}")
+
+def close_paper_position(asset, wallet_address):
+    state = load_paper_state()
+    new_positions = []
+    closed = False
+    for pos in state["positions"]:
+        if pos["asset"] == asset and pos.get("wallet_address") == wallet_address:
+            current_price = get_current_price(asset)
+            if current_price > 0 and pos["entry_price"] > 0:
+                if pos["side"] == "LONG":
+                    pnl = (current_price - pos["entry_price"]) / pos["entry_price"] * pos["invested"]
+                else:
+                    pnl = (pos["entry_price"] - current_price) / pos["entry_price"] * pos["invested"]
+            else:
+                pnl = 0
+            state["balance"] += pos["invested"] + pnl
+            state["history"].append({
+                **pos,
+                "closed_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "final_pnl": round(pnl, 2),
+                "close_price": current_price
+            })
+            closed = True
+            print(f"[PAPER] ❌ Cerrado: {pos['side']} {asset} — PNL: ${pnl:.2f}")
+        else:
+            new_positions.append(pos)
+    if closed:
+        state["positions"] = new_positions
+        save_paper_state(state)
 
 def on_ws_message(ws, message):
     try:
@@ -140,9 +174,8 @@ def on_ws_message(ws, message):
         if user not in wallet_map:
             return
         w = wallet_map[user]
-        perf = get_wallet_performance(w["address"])
-        if perf.get("win_rate", 0) < 60:
-            return
+        real_address = w["address"]
+
         asset_positions = msg_data.get("clearinghouseState", {}).get("assetPositions", [])
         new_positions = []
         for p in asset_positions:
@@ -156,13 +189,36 @@ def on_ws_message(ws, message):
                     "pnl": float(pos.get("unrealizedPnl", 0)),
                     "side": "LONG" if size > 0 else "SHORT"
                 })
-        old_positions = wallet_positions.get(w["address"], [])
-        old_assets = {p["asset"] for p in old_positions}
-        for pos in new_positions:
-            if pos["asset"] not in old_assets:
-                print(f"[WS] Nueva posición en {w['label']}: {pos['side']} {pos['asset']}")
-                process_new_position(pos["asset"], pos["side"], pos["entry_price"], w["address"], w.get("label", ""))
-        wallet_positions[w["address"]] = new_positions
+
+        old_positions = wallet_positions.get(real_address, None)
+
+        # Primera vez que vemos esta wallet — solo guardar como referencia, NO copiar
+        if old_positions is None:
+            wallet_positions[real_address] = new_positions
+            print(f"[WS] Referencia inicial cargada para {w['label']} — {len(new_positions)} posiciones existentes")
+            return
+
+        old_assets = {p["asset"]: p for p in old_positions}
+        new_assets = {p["asset"]: p for p in new_positions}
+
+        # Detectar posiciones NUEVAS — copiar
+        for asset, pos in new_assets.items():
+            if asset not in old_assets:
+                print(f"[WS] 🆕 Nueva posición en {w['label']}: {pos['side']} {asset}")
+                perf = get_wallet_performance(real_address)
+                if perf.get("win_rate", 0) >= 60:
+                    open_paper_position(asset, pos["side"], pos["entry_price"], real_address, w.get("label", ""))
+                else:
+                    print(f"[WS] ⚠️ Win rate bajo ({perf.get('win_rate')}%) — no copiando {asset}")
+
+        # Detectar posiciones CERRADAS — cerrar en paper trading
+        for asset in old_assets:
+            if asset not in new_assets:
+                print(f"[WS] 🔴 Cerrada en {w['label']}: {asset}")
+                close_paper_position(asset, real_address)
+
+        wallet_positions[real_address] = new_positions
+
     except Exception as e:
         print(f"[WS] Error: {e}")
 
@@ -206,54 +262,7 @@ def init_websocket():
     print("[WS] WebSocket iniciado en background")
 
 def check_and_copy_trades():
-    wallets = load_wallets()
     state = load_paper_state()
-    current_assets = {p["asset"] for p in state["positions"]}
-
-    for w in wallets:
-        address = w.get("address")
-        stats = get_wallet_stats(address)
-        perf = get_wallet_performance(address)
-
-        if perf.get("win_rate", 0) < 60:
-            continue
-
-        positions_from_wallet = [p for p in state["positions"] if p.get("copied_from", "").startswith(address[:10])]
-        if len(positions_from_wallet) >= 5:
-            continue
-
-        open_positions = sorted(
-            stats.get("open_positions", []),
-            key=lambda x: x.get("pnl", 0),
-            reverse=True
-        )
-
-        slots_available = 5 - len(positions_from_wallet)
-
-        for pos in open_positions[:slots_available]:
-            asset = pos["asset"]
-            if asset in current_assets:
-                continue
-            invest = state["balance"] * 0.05
-            if invest < 1:
-                continue
-            price = get_current_price(asset)
-            if price == 0:
-                price = pos["entry_price"]
-            new_position = {
-                "asset": asset,
-                "side": pos["side"],
-                "entry_price": price,
-                "size": invest / price if price > 0 else 0,
-                "invested": invest,
-                "opened_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "copied_from": address[:10] + "..." + address[-6:],
-                "wallet_label": w.get("label", "Sin nombre")
-            }
-            state["balance"] -= invest
-            state["positions"].append(new_position)
-            current_assets.add(asset)
-
     for pos in state["positions"]:
         current_price = get_current_price(pos["asset"])
         if current_price > 0 and pos["entry_price"] > 0:
@@ -264,7 +273,6 @@ def check_and_copy_trades():
             pos["current_price"] = current_price
             pos["unrealized_pnl"] = round(pnl, 2)
             pos["pnl_pct"] = round((pnl / pos["invested"]) * 100, 2)
-
     save_paper_state(state)
     return state
 
